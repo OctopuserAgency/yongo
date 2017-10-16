@@ -7,7 +7,7 @@
 		exports["promise-handler"] = factory(require("axios"));
 	else
 		root["promise-handler"] = factory(root["axios"]);
-})(this, function(__WEBPACK_EXTERNAL_MODULE_4__) {
+})(this, function(__WEBPACK_EXTERNAL_MODULE_7__) {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 1);
+/******/ 	return __webpack_require__(__webpack_require__.s = 3);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -80,57 +80,19 @@ return /******/ (function(modules) { // webpackBootstrap
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var Association = /** @class */ (function () {
-    function Association(options) {
-        this.property = options.property;
-        this.isList = options.isList;
-        this.targetClass = options.targetClass;
-    }
-    return Association;
-}());
-exports.default = Association;
-
-
-/***/ }),
-/* 1 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var model_1 = __webpack_require__(2);
-exports.Model = model_1.default;
-var has_many_1 = __webpack_require__(7);
-exports.HasMany = has_many_1.default;
-var belongs_to_many_1 = __webpack_require__(8);
-exports.BelongsToMany = belongs_to_many_1.default;
-var belongs_to_1 = __webpack_require__(9);
-exports.BelongsTo = belongs_to_1.default;
-var has_one_1 = __webpack_require__(10);
-exports.HasOne = has_one_1.default;
-var path_1 = __webpack_require__(11);
-exports.Path = path_1.default;
-var state_1 = __webpack_require__(12);
-exports.State = state_1.default;
-var field_1 = __webpack_require__(13);
-exports.Field = field_1.default;
-
-
-/***/ }),
-/* 2 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var set_config_1 = __webpack_require__(3);
-var apply_association_1 = __webpack_require__(6);
+var state_manager_1 = __webpack_require__(4);
+/*
+this is the main Class (almost static) that allows us to
+configure server in case of REST API configuration or reactive
+functions (Vue)
+*/
+var yongo_1 = __webpack_require__(1);
 var Model = /** @class */ (function () {
     function Model(data) {
         if (data === void 0) { data = {}; }
         var _this = this;
         this.className = '';
-        this.className = this.constructor['name'];
+        this.className = this.constructor.name;
         this.path = Model.paths[this.className];
         if (Model.associations[this.className]) {
             Model.associations[this.className].forEach(function (association) {
@@ -143,30 +105,19 @@ var Model = /** @class */ (function () {
             _this[key] = data[key];
         });
     }
-    Model.setConfig = function (config) {
-        set_config_1.default(this, config);
-    };
     Model.fetch = function () {
         var _this = this;
-        if (this.server) {
-            return this.server.get(this.prototype.path)
-                .then(function (response) {
-                return _this.addListToState("fetch" + _this['name'], response.data);
-            });
+        if (yongo_1.default.server) {
+            return yongo_1.default.server.get(this.prototype.path)
+                .then(function (response) { return _this.getState().addList(response.data, "fetch" + _this.name); });
         }
         return Promise.reject(new Error('There is no server configured'));
     };
     Model.getState = function () {
-        if (this.states[this['name']]) {
-            return this.states[this['name']];
-        }
-        else {
-            this.states[this['name']] = {};
-            return this.states[this['name']];
-        }
+        return this.stateManager.getState(this);
     };
-    Model.addAssociation = function (className, association) {
-        this.getAssociations(className).push(association);
+    Model.addAssociation = function (association) {
+        Model.getAssociations(association.SourceClass.name).push(association);
     };
     Model.getAssociations = function (className) {
         if (this.associations[className]) {
@@ -175,41 +126,61 @@ var Model = /** @class */ (function () {
         this.associations[className] = [];
         return this.associations[className];
     };
-    Model.addToState = function (method, payload) {
-        if (this.stateManager) {
-            this.stateManager.commit(method, payload);
-        }
-        else {
-            this.reactFunction(this.getState(), payload.id, payload);
-        }
-    };
-    Model.addListToState = function (method, payload) {
-        var _this = this;
-        if (this.stateManager) {
-            return this.stateManager.commit(method, payload);
-        }
-        else {
-            payload.forEach(function (item) {
-                var object = new _this(item);
-                object.populate();
-                _this.reactFunction(_this.getState(), item.id, object);
-            });
-            return this.getState();
-        }
-    };
     Model.prototype.populate = function () {
         var _this = this;
-        Model.getAssociations(this.className).forEach(function (association) { return apply_association_1.default(_this, association); });
+        Model.getAssociations(this.className)
+            .forEach(function (association) { return association.apply(_this); });
     };
     Model.prototype.save = function () {
-        return Model.server.post(this.path, JSON.parse(JSON.stringify(this)));
+        return yongo_1.default.server.post(this.path, JSON.parse(JSON.stringify(this)));
     };
     Model.associations = {};
+    Model.stateManager = new state_manager_1.default();
     Model.paths = {};
     Model.states = {};
     return Model;
 }());
 exports.default = Model;
+
+
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var set_config_1 = __webpack_require__(6);
+var Yongo = /** @class */ (function () {
+    function Yongo() {
+    }
+    Yongo.setConfig = function (config) {
+        if (config === void 0) { config = {}; }
+        set_config_1.default(this, config);
+    };
+    return Yongo;
+}());
+Yongo.setConfig();
+exports.default = Yongo;
+
+
+/***/ }),
+/* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var Association = /** @class */ (function () {
+    function Association(_a) {
+        var property = _a.property, SourceClass = _a.SourceClass, TargetClass = _a.TargetClass;
+        this.property = property;
+        this.TargetClass = TargetClass;
+        this.SourceClass = SourceClass;
+    }
+    return Association;
+}());
+exports.default = Association;
 
 
 /***/ }),
@@ -219,43 +190,143 @@ exports.default = Model;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var axios_1 = __webpack_require__(4);
-var framework_detect_1 = __webpack_require__(5);
-function setConfig(model, config) {
+var model_1 = __webpack_require__(0);
+exports.Model = model_1.default;
+var has_many_1 = __webpack_require__(9);
+exports.HasMany = has_many_1.default;
+var has_one_1 = __webpack_require__(11);
+exports.HasOne = has_one_1.default;
+var path_1 = __webpack_require__(13);
+exports.Path = path_1.default;
+var field_1 = __webpack_require__(14);
+exports.Field = field_1.default;
+var yongo_1 = __webpack_require__(1);
+exports.default = yongo_1.default;
+
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var state_1 = __webpack_require__(5);
+var StateManager = /** @class */ (function () {
+    function StateManager() {
+        this.states = {};
+        this.stateHandler = {
+            ownKeys: function (target) {
+                var privateFields = ['Class', 'stateHandler'];
+                var keys = Object.keys(target);
+                privateFields.forEach(function (privateField) { return keys.splice(keys.indexOf(privateField), 1); });
+                return keys;
+            },
+        };
+    }
+    StateManager.prototype.getState = function (ModelClass) {
+        if (!this.states[ModelClass.name]) {
+            var state = new state_1.default(ModelClass);
+            this.states[ModelClass.name] = new Proxy(state, this.stateHandler);
+        }
+        return this.states[ModelClass.name];
+    };
+    return StateManager;
+}());
+exports.default = StateManager;
+
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var yongo_1 = __webpack_require__(1);
+var State = /** @class */ (function () {
+    function State(Class) {
+        this.stateHandler = {
+            set: function (target, property, value) {
+                console.log(target, property, value);
+                return true;
+            },
+        };
+        this.Class = Class;
+    }
+    State.prototype.addObject = function (payload, method) {
+        var object = new this.Class(payload);
+        object.populate();
+        var proxy = new Proxy(object, this.stateHandler);
+        if (!yongo_1.default.reactFunction) {
+            this[object.id] = object;
+        }
+        else {
+            yongo_1.default.reactFunction(this, object.id, object);
+        }
+        return object;
+    };
+    State.prototype.addList = function (payload, method) {
+        var instances = [];
+        for (var index = 0; index < payload.length; index += 1) {
+            var object = new this.Class(payload[index]);
+            object.populate();
+            var proxy = new Proxy(object, this.stateHandler);
+            instances.push(object);
+            if (!yongo_1.default.reactFunction) {
+                this[object.id] = object;
+            }
+            else {
+                yongo_1.default.reactFunction(this, object.id, object);
+            }
+        }
+        return instances;
+    };
+    return State;
+}());
+exports.default = State;
+
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var axios_1 = __webpack_require__(7);
+var framework_detect_1 = __webpack_require__(8);
+function setConfig(targetClass, config) {
     if (config.baseUrl) {
-        model.server = axios_1.default.create({
+        targetClass.server = axios_1.default.create({
             baseURL: config.baseUrl,
         });
     }
     if (config.framework) {
         switch (framework_detect_1.default(config.framework)) {
             case 'Vue':
-                model.reactFunction = config.framework.set;
+                targetClass.reactFunction = config.framework.set;
                 break;
             default:
-                model.reactFunction = function (object, property, value) { return Object.defineProperty(object, property, { value: value }); };
+                targetClass.reactFunction = function (object, property, value) {
+                    return Object.defineProperty(object, property, { value: value });
+                };
                 break;
         }
     }
-    else {
-        model.reactFunction = function (object, property, value) {
-            object[property] = value;
-            return object;
-        };
-    }
-    model.stateManager = config.stateManager;
+    targetClass.stateManager = config.stateManager;
 }
 exports.default = setConfig;
 
 
 /***/ }),
-/* 4 */
+/* 7 */
 /***/ (function(module, exports) {
 
 module.exports = require("axios");
 
 /***/ }),
-/* 5 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -271,94 +342,25 @@ exports.default = frameworkDetect;
 
 
 /***/ }),
-/* 6 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-function applyAssociation(object, association) {
-    var TargetClass = association.targetClass;
-    if (association.isList) {
-        console.log(object, association, object[association.property]);
-        var list = object[association.property];
-        object[association.property] = list.map(function (item) {
-            var insertObject = new TargetClass(item);
-            TargetClass.reactFunction(TargetClass.getState(), item.id, insertObject);
-            return item.id;
-        });
-    }
-    else {
-        var insertObject = new TargetClass(object[association.property]);
-        TargetClass.reactFunction(TargetClass.getState(), insertObject.id, insertObject);
-        object[association.property] = insertObject.id;
-    }
-}
-exports.default = applyAssociation;
-
-
-/***/ }),
-/* 7 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var association_1 = __webpack_require__(0);
-function HasMany(targetClass, options) {
-    return function (target) {
-        target.addAssociation(target.name, new association_1.default({
-            isList: true,
-            property: options.property,
-            targetClass: targetClass,
-        }));
-    };
-}
-exports.default = HasMany;
-
-
-/***/ }),
-/* 8 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var association_1 = __webpack_require__(0);
-function BelongsToMany(targetClass) {
-    return function (target) {
-        var pluralEnding = target.name.endsWith('s') ? 'es' : 's';
-        var plural = "" + target.name.toLowerCase() + pluralEnding;
-        targetClass.addAssociation(new association_1.default({
-            isList: true,
-            property: plural,
-            class: target,
-        }));
-    };
-}
-exports.default = BelongsToMany;
-
-
-/***/ }),
 /* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var association_1 = __webpack_require__(0);
-function BelongsTo(targetClass) {
-    return function (target) {
-        console.log(target);
-        var singular = target.name.toLowerCase();
-        targetClass.addAssociation(new association_1.default({
-            isList: false,
-            property: singular,
-            class: target,
+var has_many_1 = __webpack_require__(10);
+var model_1 = __webpack_require__(0);
+function HasManyDecorator(TargetClass, _a) {
+    var property = _a.property;
+    return function (SourceClass) {
+        model_1.default.addAssociation(new has_many_1.default({
+            property: property,
+            SourceClass: SourceClass,
+            TargetClass: TargetClass,
         }));
     };
 }
-exports.default = BelongsTo;
+exports.default = HasManyDecorator;
 
 
 /***/ }),
@@ -367,18 +369,30 @@ exports.default = BelongsTo;
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
-var association_1 = __webpack_require__(0);
-function HasOne(targetClass, options) {
-    return function (target) {
-        target.addAssociation(target.name, new association_1.default({
-            isList: false,
-            property: options.property,
-            targetClass: targetClass,
-        }));
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
-}
-exports.default = HasOne;
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var association_1 = __webpack_require__(2);
+var HasMany = /** @class */ (function (_super) {
+    __extends(HasMany, _super);
+    function HasMany(_a) {
+        var property = _a.property, SourceClass = _a.SourceClass, TargetClass = _a.TargetClass;
+        return _super.call(this, { property: property, SourceClass: SourceClass, TargetClass: TargetClass }) || this;
+    }
+    HasMany.prototype.apply = function (source) {
+        source[this.property] = this.TargetClass.getState().addList(source[this.property]);
+    };
+    return HasMany;
+}(association_1.default));
+exports.default = HasMany;
 
 
 /***/ }),
@@ -388,10 +402,19 @@ exports.default = HasOne;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-function Path(path) {
-    return function (target) { target.paths[target['name']] = path; };
+var has_one_1 = __webpack_require__(12);
+var model_1 = __webpack_require__(0);
+function HasOneDecorator(TargetClass, _a) {
+    var property = _a.property;
+    return function (SourceClass) {
+        model_1.default.addAssociation(new has_one_1.default({
+            property: property,
+            SourceClass: SourceClass,
+            TargetClass: TargetClass,
+        }));
+    };
 }
-exports.default = Path;
+exports.default = HasOneDecorator;
 
 
 /***/ }),
@@ -400,18 +423,47 @@ exports.default = Path;
 
 "use strict";
 
-Object.defineProperty(exports, "__esModule", { value: true });
-function State(state) {
-    if (state === void 0) { state = {}; }
-    return function (target) {
-        target.prototype.state = state;
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = Object.setPrototypeOf ||
+        ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+        function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
-}
-exports.default = State;
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+var association_1 = __webpack_require__(2);
+var HasOne = /** @class */ (function (_super) {
+    __extends(HasOne, _super);
+    function HasOne(_a) {
+        var property = _a.property, SourceClass = _a.SourceClass, TargetClass = _a.TargetClass;
+        return _super.call(this, { property: property, SourceClass: SourceClass, TargetClass: TargetClass }) || this;
+    }
+    HasOne.prototype.apply = function (source) {
+        source[this.property] = this.TargetClass.getState().addObject(source);
+    };
+    return HasOne;
+}(association_1.default));
+exports.default = HasOne;
 
 
 /***/ }),
 /* 13 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+function Path(path) {
+    return function (target) { target.paths[target.name] = path; };
+}
+exports.default = Path;
+
+
+/***/ }),
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";

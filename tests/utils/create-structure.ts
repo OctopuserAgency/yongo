@@ -1,15 +1,12 @@
 import {
-  BelongsTo,
   HasOne,
   HasMany,
   Model,
   Path,
-  State,
   Field } from '../../src';
 
 
-@State({})
-@Path('/events')
+@Path('/hasone')
 class HasOneModel extends Model {
   @Field()
   city;
@@ -23,8 +20,7 @@ class HasOneModel extends Model {
   description;
 }
 
-@State({})
-@Path('/events')
+@Path('/hasmany')
 class HasManyModel extends Model {
   @Field()
   city;
@@ -38,11 +34,12 @@ class HasManyModel extends Model {
   description;
 }
 
-@State({})
-@Path('/events')
-@HasOne(HasOneModel, { property: 'hasOne' })
+@Path('/roots')
 @HasMany(HasManyModel, { property: 'hasMany' })
+@HasOne(HasOneModel, { property: 'hasOne' })
 class Root extends Model {
+  hasOne;
+  hasMany;
   @Field()
   city;
   @Field()

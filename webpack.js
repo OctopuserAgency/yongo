@@ -1,16 +1,10 @@
 const path = require('path');
 const nodeExternals = require('webpack-node-externals');
-var ora = require('ora')
-var webpack = require('webpack')
+const ora = require('ora');
+const webpack = require('webpack');
 
-console.log(
-  '  Tip:\n' +
-  '  Built files are meant to be served over an HTTP server.\n' +
-  '  Opening index.html over file:// won\'t work.\n'
-)
-
-var spinner = ora('building for production...')
-spinner.start()
+const spinner = ora('building...');
+spinner.start();
 
 const webpackConfig = {
   entry: './src/index.ts',
@@ -22,15 +16,15 @@ const webpackConfig = {
     path: path.resolve(__dirname, 'dist'),
     library: 'promise-handler',
     libraryTarget: 'umd',
-    umdNamedDefine: true
+    umdNamedDefine: true,
   },
   resolve: {
     modules: [path.resolve('./node_modules'), path.resolve('./src')],
-    extensions: ['.json', '.js', '.ts']
+    extensions: ['.json', '.js', '.ts'],
   },
   module: {
     rules: [
-      /*{
+      /* {
         test: /\.js$/,
         exclude: /(node_modules|bower_components)/,
         use: {
@@ -40,7 +34,7 @@ const webpackConfig = {
             plugins: ["transform-es2015-modules-commonjs"]
           },
         },
-      },*/
+      }, */
       {
         test: /\.tsx?$/,
         loader: 'ts-loader',
@@ -50,14 +44,15 @@ const webpackConfig = {
   },
 };
 
-webpack(webpackConfig, function (err, stats) {
-  spinner.stop()
-  if (err) throw err
-  process.stdout.write(stats.toString({
+webpack(webpackConfig, (err, stats) => {
+  spinner.stop();
+  if (err) throw err;
+  const statsOutput = stats.toString({
     colors: true,
     modules: false,
     children: false,
     chunks: false,
-    chunkModules: false
-  }) + '\n')
-})
+    chunkModules: false,
+  });
+  process.stdout.write(`${statsOutput}\n`);
+});
