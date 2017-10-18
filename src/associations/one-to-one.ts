@@ -14,8 +14,12 @@ export default class OneToOne extends Association {
   }
 
   public apply(source) {
-    source.deactivateProxy();
     const target = source[this.sourceProperty];
+    if (!target) {
+      source[this.sourceProperty] = undefined;
+      return;
+    }
+    source.deactivateProxy();
     const targetFound = Model.stateManager.states[this.TargetClass.name][target.id];
     if (targetFound) {
       targetFound.deactivateProxy();

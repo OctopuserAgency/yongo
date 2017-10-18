@@ -16,6 +16,10 @@ export default class ManyToOne extends Association {
   }
 
   public apply(source) {
+    if (!source[this.sourceProperty]) {
+      source[this.sourceProperty] = {};
+      return;
+    }
     source.deactivateProxy();
     const listOfTargets = source[this.sourceProperty];
     if (Array.isArray(listOfTargets)) {

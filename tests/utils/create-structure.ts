@@ -10,18 +10,42 @@ import {
 
 @Path('/hasone')
 class HasManyToMany extends Model {
+  @Field('default')
+  field1;
+  @Field(2)
+  field2;
+  @Field(new Date())
+  field3;
 }
 
 @Path('/hasmany')
 class HasManyToOne extends Model {
+  @Field('default')
+  field1;
+  @Field(2)
+  field2;
+  @Field(new Date())
+  field3;
 }
 
 @Path('/hasmany')
 class HasOneToOne extends Model {
+  @Field('default')
+  field1;
+  @Field(2)
+  field2;
+  @Field(new Date())
+  field3;
 }
 
 @Path('/hasmany')
 class HasOneToMany extends Model {
+  @Field('default')
+  field1;
+  @Field(2)
+  field2;
+  @Field(new Date())
+  field3;
 }
 
 @Path('/roots')
@@ -30,6 +54,12 @@ class HasOneToMany extends Model {
 @OneToOne(HasOneToOne, { sourceProperty: 'hasOneToOne', targetProperty: 'oneToOneRoot' })
 @OneToMany(HasOneToMany, { sourceProperty: 'hasOneToMany', targetProperty: 'oneToManyRoots' })
 class Root extends Model {
+  @Field('default')
+  field1;
+  @Field(2)
+  field2;
+  @Field(new Date())
+  field3;
 }
 
 

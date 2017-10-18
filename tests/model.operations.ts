@@ -56,9 +56,12 @@ describe('Model class', function ModelClass() {
   });
   it('insert should call to post', async () => {
     const rootToCreate = {
-      field: 1,
-      fieldDate: new Date(),
+      field1: 'string',
+      field2: 2,
+      field3: new Date(),
       hasManyToMany: [1, 2, 3],
+      hasManyToOne: {},
+      hasOneToMany: undefined,
       hasOneToOne: [1],
     };
     const root = new Root(rootToCreate);

@@ -1,6 +1,6 @@
 {
   "name": "yongo",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Models made to be highly configurable",
   "main": "dist/index.js",
   "author": "Joan Picornell",
@@ -44,7 +44,10 @@
     "postperformance": "rm -rf ./tests-compile",
     "pretest": "tsc --outDir tests-compile",
     "test": "istanbul cover -e .ts -x \"*.d.ts\" ./node_modules/mocha/bin/mocha tests-compile/tests/index.js -- -R spec --recursive",
-    "posttest": "rm -rf ./tests-compile"
+    "posttest": "rm -rf ./tests-compile",
+    "pretestinspect": "tsc --outDir tests-compile",
+    "testinspect": "istanbul cover -e .ts -x \"*.d.ts\" ./node_modules/mocha/bin/mocha tests-compile/tests/index.js -- -R spec --recursive --inspect --inspect-brk",
+    "posttestinspect": "rm -rf ./tests-compile"
   },
   "dependencies": {
     "axios": "^0.16.2"

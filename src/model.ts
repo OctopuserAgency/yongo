@@ -18,6 +18,7 @@ export default class Model {
   static paths: Object = {};
   static states: Object = {};
   public static stateManager = new StateManager();
+  static fields = {};
 
   public id: Number;
   private className: string = '';
@@ -45,6 +46,17 @@ export default class Model {
     return Promise.reject(new Error('There is no server configured'));
   }
 
+  public static addField(field, defaultValue) {
+    if (!Model.fields[this.name]) {
+      Model.fields[this.name] = {};
+    }
+    if (defaultValue) {
+      Model.fields[this.name][field] = {
+        defaultValue,
+      };
+    }
+  }
+
   public static getState() {
     return this.stateManager.getState(this);
   }
@@ -68,10 +80,22 @@ export default class Model {
   constructor(data = undefined) {
     this.className = this.constructor.name;
     this.path = Model.paths[this.className];
-    if (data) {
-      Object.keys(data).forEach((key) => {
-        this[key] = data[key];
+    if (data.id) {
+      this.id = data.id;
+    }
+    if (data && Model.fields[this.className]) {
+      Object.keys(Model.fields[this.className]).forEach((key) => {
+        if (this[data]) {
+          this[key] = data[key];
+        } else {
+          this[key] = Model.fields[this.className].defaultValue;
+        }
       });
+    }
+    const associations = Model.associations[this.className];
+    for (let index = 0; index < associations.length; index += 1) {
+      const associationField = associations[index].sourceProperty;
+      this[associationField] = data[associationField];
     }
   }
 
