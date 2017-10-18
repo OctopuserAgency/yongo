@@ -15,14 +15,16 @@ export default class Model {
   static PENDING_CREATE = 'pending_create';
   static SYNCED = 'synced';
   static associations = {};
-  static stateManager = new StateManager();
   static paths: Object = {};
   static states: Object = {};
+  public static stateManager = new StateManager();
 
   public id: Number;
   private className: string = '';
   private path: string;
   private modifiedFields = {};
+  private activationHandler = {};
+  private actualHandler = {};
   public syncStatus = {
     updating: false,
     creating: false,
@@ -33,6 +35,7 @@ export default class Model {
     },
     synced: false,
   };
+  private proxy;
 
   public static fetch() {
     if (Yongo.server) {
@@ -47,7 +50,11 @@ export default class Model {
   }
 
   public static addAssociation(association: Association) {
-    Model.getAssociations(association.SourceClass.name).push(association);
+    if (!Model.associations[association.SourceClass.name]) {
+      Model.associations[association.SourceClass.name] = [];
+    }
+    Model.stateManager.getState(association.SourceClass);
+    Model.associations[association.SourceClass.name].push(association);
   }
 
   public static getAssociations(className) {
@@ -61,9 +68,11 @@ export default class Model {
   constructor(data = undefined) {
     this.className = this.constructor.name;
     this.path = Model.paths[this.className];
-    Object.keys(data).forEach((key) => {
-      this[key] = data[key];
-    });
+    if (data) {
+      Object.keys(data).forEach((key) => {
+        this[key] = data[key];
+      });
+    }
   }
 
   public setModifiedField(field, value) {
@@ -78,9 +87,32 @@ export default class Model {
     return this.syncStatus;
   }
 
+  public getProxy(proxy) {
+    return this.proxy;
+  }
+
+  public setProxy(proxy) {
+    this.proxy = proxy;
+  }
+
+  public setActivationProxy(activationHandler, handler) {
+    this.activationHandler = activationHandler;
+    this.actualHandler = handler;
+  }
+
+  public activateProxy() {
+    (<any> this.actualHandler).set = (<any> this.activationHandler).set;
+  }
+
+  public deactivateProxy() {
+    (<any> this.actualHandler).set = undefined;
+  }
+
   populate() {
-    Model.getAssociations(this.className)
-      .forEach(association => association.apply(this));
+    const associations = Model.associations[this.className];
+    for (let index = 0; index < associations.length; index += 1) {
+      associations[index].apply(this);
+    }
   }
 
   save() {
@@ -102,13 +134,35 @@ export default class Model {
     if (this.syncStatus.synced) {
       throw new Error('The model is already synced.');
     }
+    const associations = Model.associations[this.className];
+    const createModels = [];
+    const sendingModel = {};
+    Object.assign(sendingModel, this.getSimplifiedObject());
+    this.syncStatus.pending.create = false;
     this.syncStatus.creating = true;
-    return Yongo.server.post(`${this.path}`, this)
+    associations.forEach((association) => {
+      if (!sendingModel[association.sourceTarget]) {
+        return;
+      }
+      if (association.isSourceList) {
+        const keys = Object.keys(sendingModel[association.sourceTarget]);
+        keys.forEach((key) => {
+          const target = sendingModel[association.sourceTarget][key];
+          if (target.syncStatus.pending.create) {
+            createModels.push(target.insert());
+          }
+        });
+        sendingModel[association.sourceTarget] = keys;
+      } else {
+        sendingModel[association.sourceTarget] = sendingModel[association.sourceTarget].id;
+      }
+    });
+    return Promise.all(createModels).then(() => Yongo.server.post(this.path, sendingModel)
       .then((response) => {
         this.syncStatus.creating = false;
         Model.stateManager.getState(<typeof Model> this.constructor).addModel(this);
         return response;
-      });
+      }));
   }
 
   delete() {
@@ -117,11 +171,21 @@ export default class Model {
     }
     this.syncStatus.synced = false;
     this.syncStatus.deleting = true;
-    return Yongo.server.post(`${this.path}/${this.id}`, this.modifiedFields)
+    return Yongo.server.delete(`${this.path}/${this.id}`)
       .then((response) => {
         this.syncStatus.deleting = false;
         Model.stateManager.getState(<typeof Model> this.constructor).removeModel(this);
         return response;
       });
+  }
+
+  private getSimplifiedObject() {
+    const privateFields = ['className', 'modifiedFields', 'activationHandler', 'actualHandler', 'syncStatus', 'path'];
+    const keys = Object.keys(this);
+    privateFields.forEach(privateField => keys.splice(keys.indexOf(privateField), 1));
+    console.log(keys);
+    const simplifiedObject = {};
+    keys.forEach((key) => { simplifiedObject[key] = this[key]; });
+    return simplifiedObject;
   }
 }

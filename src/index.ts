@@ -1,10 +1,12 @@
 import Model from './model';
-import HasMany from './decorators/has-many';
-import HasOne from './decorators/has-one';
+import OneToOne from './decorators/one-to-one';
+import OneToMany from './decorators/one-to-many';
+import ManyToMany from './decorators/many-to-many';
+import ManyToOne from './decorators/many-to-one';
 import Path from './decorators/path';
 import Field from './decorators/field';
 import Yongo from './yongo';
 
-export { Model, HasMany, HasOne, Path, Field };
+export { Model, ManyToMany, ManyToOne, OneToMany, OneToOne, Path, Field };
 
 export default Yongo;

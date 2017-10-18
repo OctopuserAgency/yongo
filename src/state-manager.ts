@@ -2,7 +2,7 @@ import Model from './model';
 import State from './state';
 
 export default class StateManager {
-  protected states = {};
+  public states = {};
   private stateHandler = {
     ownKeys(target) {
       const privateFields = ['Class', 'stateHandler'];

@@ -1,56 +1,36 @@
 import {
-  HasOne,
-  HasMany,
+  ManyToMany,
+  ManyToOne,
+  OneToOne,
+  OneToMany,
   Model,
   Path,
   Field } from '../../src';
 
 
 @Path('/hasone')
-class HasOneModel extends Model {
-  @Field()
-  city;
-  @Field()
-  field1;
-  @Field()
-  language;
-  @Field()
-  totalPlaces;
-  @Field()
-  description;
+class HasManyToMany extends Model {
 }
 
 @Path('/hasmany')
-class HasManyModel extends Model {
-  @Field()
-  city;
-  @Field()
-  field1;
-  @Field()
-  language;
-  @Field()
-  totalPlaces;
-  @Field()
-  description;
+class HasManyToOne extends Model {
+}
+
+@Path('/hasmany')
+class HasOneToOne extends Model {
+}
+
+@Path('/hasmany')
+class HasOneToMany extends Model {
 }
 
 @Path('/roots')
-@HasMany(HasManyModel, { property: 'hasMany' })
-@HasOne(HasOneModel, { property: 'hasOne' })
+@ManyToMany(HasManyToMany, { sourceProperty: 'hasManyToMany', targetProperty: 'manyToManyRoots' })
+@ManyToOne(HasManyToOne, { sourceProperty: 'hasManyToOne', targetProperty: 'manyToOneRoot' })
+@OneToOne(HasOneToOne, { sourceProperty: 'hasOneToOne', targetProperty: 'oneToOneRoot' })
+@OneToMany(HasOneToMany, { sourceProperty: 'hasOneToMany', targetProperty: 'oneToManyRoots' })
 class Root extends Model {
-  hasOne;
-  hasMany;
-  @Field()
-  city;
-  @Field()
-  field1;
-  @Field()
-  language;
-  @Field()
-  totalPlaces;
-  @Field()
-  description;
 }
 
 
-export { Root, HasManyModel, HasOneModel };
+export { Root, HasManyToMany, HasManyToOne, HasOneToOne, HasOneToMany };

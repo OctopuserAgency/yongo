@@ -1,1 +1,2 @@
-import './model.test';
+import './model.structure';
+import './model.operations';

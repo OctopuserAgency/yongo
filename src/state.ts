@@ -5,7 +5,14 @@ export default class State {
   protected stateHandler = {
     set(target, property, value) {
       target.setModifiedField(property, value);
+      console.log('seting', property);
       return true;
+    },
+    ownKeys(target) {
+      const privateFields = ['className', 'modifiedFields', 'activationHandler', 'actualHandler', 'syncStatus', 'path'];
+      const keys = Object.keys(target);
+      privateFields.forEach(privateField => keys.splice(keys.indexOf(privateField), 1));
+      return keys;
     },
   };
 
@@ -31,13 +38,16 @@ export default class State {
     const object = new this.Class(payload);
     object.getStatus().pending.create = false;
     object.getStatus().synced = true;
-    object.populate();
-    const proxy = new Proxy(object, this.stateHandler);
+    const handler = {};
+    object.setActivationProxy(this.stateHandler, handler);
+    const proxy = new Proxy(object, handler);
+    proxy.setProxy(proxy);
     if (!Yongo.reactFunction) {
       this[object.id] = proxy;
     } else {
       Yongo.reactFunction(this, object.id, object);
     }
+    object.populate();
     return proxy;
   }
 
@@ -47,15 +57,26 @@ export default class State {
       const object = new this.Class(payload[index]);
       object.getStatus().pending.create = false;
       object.getStatus().synced = true;
-      object.populate();
-      const proxy = new Proxy(object, this.stateHandler);
-      instances.push(proxy);
+      const handler = {};
+      object.setActivationProxy(this.stateHandler, handler);
+      const proxy = new Proxy(object, handler);
+      proxy.setProxy(proxy);
       if (!Yongo.reactFunction) {
         this[object.id] = proxy;
       } else {
         Yongo.reactFunction(this, object.id, object);
       }
+      object.populate();
+      instances.push(proxy);
     }
     return instances;
+  }
+
+  public findById(id) {
+    return this[id];
+  }
+
+  public getList() {
+    return Object.keys(this).map(key => this[key]);
   }
 }
