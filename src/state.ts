@@ -5,7 +5,6 @@ export default class State {
   protected stateHandler = {
     set(target, property, value) {
       target.setModifiedField(property, value);
-      console.log('seting', property);
       return true;
     },
     ownKeys(target) {

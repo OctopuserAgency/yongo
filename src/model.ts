@@ -183,7 +183,6 @@ export default class Model {
     const privateFields = ['className', 'modifiedFields', 'activationHandler', 'actualHandler', 'syncStatus', 'path'];
     const keys = Object.keys(this);
     privateFields.forEach(privateField => keys.splice(keys.indexOf(privateField), 1));
-    console.log(keys);
     const simplifiedObject = {};
     keys.forEach((key) => { simplifiedObject[key] = this[key]; });
     return simplifiedObject;
