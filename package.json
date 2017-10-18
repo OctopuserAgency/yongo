@@ -1,6 +1,6 @@
 {
   "name": "yongo",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Models made to be highly configurable",
   "main": "dist/index.js",
   "author": "Joan Picornell",
