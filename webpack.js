@@ -14,7 +14,7 @@ const webpackConfig = {
   output: {
     filename: 'index.js',
     path: path.resolve(__dirname, 'dist'),
-    library: 'promise-handler',
+    library: 'yongo',
     libraryTarget: 'umd',
     umdNamedDefine: true,
   },

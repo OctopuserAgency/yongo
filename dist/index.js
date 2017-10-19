@@ -112,7 +112,7 @@ var Model = /** @class */ (function () {
         }
         if (data && Model.fields[this.className]) {
             Object.keys(Model.fields[this.className]).forEach(function (key) {
-                if (_this[data]) {
+                if (data[key]) {
                     _this[key] = data[key];
                 }
                 else {
