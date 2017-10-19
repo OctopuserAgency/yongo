@@ -85,7 +85,7 @@ export default class Model {
     }
     if (data && Model.fields[this.className]) {
       Object.keys(Model.fields[this.className]).forEach((key) => {
-        if (this[data]) {
+        if (data[key]) {
           this[key] = data[key];
         } else {
           this[key] = Model.fields[this.className].defaultValue;

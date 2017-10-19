@@ -52,7 +52,6 @@ describe('Model class', function ModelClass() {
           expect(root.id).to.equal(Root.getState().findById(root.id).id);
         })));
     it('related ManyToOne states should be populated', () => Root.fetch().then(() => {
-      console.log(Root.getState());
       Root.getState().getList()
         .forEach((root) => {
           Object.keys(root.hasManyToOne).map(key => root.hasManyToOne[key])

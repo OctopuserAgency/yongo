@@ -23,7 +23,6 @@ describe('Model class', function ModelClass() {
         return Promise.resolve({ data: mockedStructure });
       },
       post(url, payload) {
-        console.log('payload');
         return Promise.resolve({ data: payload });
       },
       put(url, payload) {
